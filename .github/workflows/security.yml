@@ -34,8 +34,8 @@ jobs:
             data = json.load(f)
 
           sarif = {
-            "version": "2.2",
-            "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.2/schema/sarif-schema-2.2.json",
+            "version": "2.1.0",
+            "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
             "runs": [{
               "tool": {
                 "driver": {
@@ -53,11 +53,12 @@ jobs:
 
           for issue in data.get("results", []):
             rule_id = issue.get("test_id", "UNKNOWN")
+            severity = issue.get("severity", "MEDIUM")
             rule = {
               "id": rule_id,
               "name": issue.get("test_name", "unknown"),
               "shortDescription": {"text": issue.get("issue_text", "")},
-              "properties": {"tags": [issue.get("severity", "").lower()]}
+              "properties": {"tags": [severity.lower()] if severity else []}
             }
             if rule not in sarif["runs"][0]["tool"]["driver"]["rules"]:
               sarif["runs"][0]["tool"]["driver"]["rules"].append(rule)
