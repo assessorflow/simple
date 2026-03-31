@@ -14,15 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-
-      - name: Perform Bandit Analysis
-        uses: PyCQA/bandit-action@v1
         with:
-          python-version: "3.14"
-          severity: "medium"
-          confidence: "medium"
-          exclude: "tests,venv,env,build,dist,.git"
-          targets: "."
+          fetch-depth: 0
 
       - name: Install Bandit
         run: pip install bandit
@@ -31,10 +24,9 @@ jobs:
         run: bandit -r . --format sarif --output bandit-results.sarif --exclude tests,venv,env,build,dist,.git
 
       - name: Upload Bandit SARIF
-        uses: actions/upload-artifact@v7
+        uses: github/codeql-action/upload-sarif@v4
         with:
-          name: Bandit SARIF
-          path: bandit-results.sarif
+          sarif_file: bandit-results.sarif
 
   dependency-check:
     name: OWASP Dependency-Check
