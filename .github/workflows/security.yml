@@ -20,8 +20,63 @@ jobs:
       - name: Install Bandit
         run: pip install bandit
 
-      - name: Generate SARIF
-        run: bandit -r . --format sarif --output bandit-results.sarif --exclude tests,venv,env,build,dist,.git
+      - name: Generate Bandit JSON
+        run: bandit -r . --format json --output bandit-results.json --exclude tests,venv,env,build,dist,.git
+
+      - name: Convert Bandit JSON to SARIF
+        run: |
+          python3 << 'EOF'
+          import json
+          import sys
+
+          with open("bandit-results.json") as f:
+            data = json.load(f)
+
+          sarif = {
+            "version": "2.1.0",
+            "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+            "runs": [{
+              "tool": {
+                "driver": {
+                  "name": "Bandit",
+                  "version": "1.1.0",
+                  "informationUri": "https://bandit.readthedocs.io/",
+                  "rules": []
+                }
+              },
+              "results": []
+            }]
+          }
+
+          severity_map = {"LOW": "note", "MEDIUM": "warning", "HIGH": "error"}
+
+          for issue in data.get("results", []):
+            rule_id = issue.get("test_id", "UNKNOWN")
+            rule = {
+              "id": rule_id,
+              "name": issue.get("test_name", "unknown"),
+              "shortDescription": {"text": issue.get("issue_text", "")},
+              "properties": {"tags": [issue.get("severity", "").lower()]}
+            }
+            if rule not in sarif["runs"][0]["tool"]["driver"]["rules"]:
+              sarif["runs"][0]["tool"]["driver"]["rules"].append(rule)
+
+            result = {
+              "ruleId": rule_id,
+              "level": severity_map.get(issue.get("severity", "MEDIUM"), "warning"),
+              "message": {"text": issue.get("issue_text", "")},
+              "locations": [{
+                "physicalLocation": {
+                  "artifactLocation": {"uri": issue.get("filename", "")},
+                  "region": {"startLine": issue.get("line_number", 1)}
+                }
+              }]
+            }
+            sarif["runs"][0]["results"].append(result)
+
+          with open("bandit-results.sarif", "w") as f:
+            json.dump(sarif, f, indent=2)
+          EOF
 
       - name: Upload Bandit SARIF
         uses: github/codeql-action/upload-sarif@v4
