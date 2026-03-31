@@ -24,6 +24,18 @@ jobs:
           exclude: "tests,venv,env,build,dist,.git"
           targets: "."
 
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Generate SARIF
+        run: bandit -r . --format sarif --output bandit-results.sarif --exclude tests,venv,env,build,dist,.git
+
+      - name: Upload Bandit SARIF
+        uses: actions/upload-artifact@v7
+        with:
+          name: Bandit SARIF
+          path: bandit-results.sarif
+
   dependency-check:
     name: OWASP Dependency-Check
     runs-on: ubuntu-latest
