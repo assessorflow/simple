@@ -26,9 +26,9 @@ jobs:
       - name: Convert Bandit JSON to SARIF
         run: |
           BANDIT_VERSION=$(bandit --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1)
-          python3 << EOF
+          python3 << 'PYEOF'
           import json
-          version = '${BANDIT_VERSION}'
+          version = 'VERSION_PLACEHOLDER'
 
           with open("bandit-results.json") as f:
             data = json.load(f)
@@ -78,12 +78,14 @@ jobs:
 
           with open("bandit-results.sarif", "w") as f:
             json.dump(sarif, f, indent=2)
-          EOF
+          PYEOF
+          sed -i "s/VERSION_PLACEHOLDER/$BANDIT_VERSION/" bandit-results.sarif
 
       - name: Upload Bandit SARIF
-        uses: github/codeql-action/upload-sarif@v4
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: bandit-results.sarif
+          name: Bandit SARIF
+          path: bandit-results.sarif
 
   dependency-check:
     name: OWASP Dependency-Check
