@@ -18,28 +18,33 @@ jobs:
       - name: Perform Bandit Analysis
         uses: PyCQA/bandit-action@v1
         with:
-          python-version: "3.11"
+          python-version: "3.14"
           severity: "medium"
           confidence: "medium"
           exclude: "tests,venv,env,build,dist,.git"
           targets: "."
 
   dependency-check:
-    name: OWASP Dependency-Check
+    name: OWASP Dependency-Check (Python/uv)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Build project with Maven
-        run: mvn clean install
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8
+        with:
+          version: "latest"
+
+      - name: Generate requirements file
+        run: uv export --format requirements-txt --output-file requirements.txt
 
       - name: Depcheck
         uses: dependency-check/Dependency-Check_Action@main
         id: Depcheck
         with:
-          project: 'test'
-          path: '.'
+          project: 'python-project'
+          path: 'requirements.txt'
           format: 'HTML'
           out: 'reports'
           args: >
