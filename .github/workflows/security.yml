@@ -25,21 +25,22 @@ jobs:
 
       - name: Convert Bandit JSON to SARIF
         run: |
-          python3 << 'EOF'
+          BANDIT_VERSION=$(bandit --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' | head -1)
+          python3 << EOF
           import json
-          import sys
+          version = '${BANDIT_VERSION}'
 
           with open("bandit-results.json") as f:
             data = json.load(f)
 
           sarif = {
-            "version": "2.1.0",
-            "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+            "version": "2.2",
+            "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.2/schema/sarif-schema-2.2.json",
             "runs": [{
               "tool": {
                 "driver": {
                   "name": "Bandit",
-                  "version": "1.1.0",
+                  "version": version,
                   "informationUri": "https://bandit.readthedocs.io/",
                   "rules": []
                 }
