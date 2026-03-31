@@ -1,0 +1,69 @@
+# Garak Red Teaming Configuration
+# https://reference.garak.ai/en/latest/
+
+garak_version: "0.10.0"
+
+generators:
+  - name: openai_compatible
+    generator_type: OpenAICompatible
+    config:
+      uri: ${GARAK_OPENAI_BASE_URL}
+      api_key: ${GARAK_OPENAI_API_KEY}
+      model_name: ${GARAK_OPENAI_MODEL}
+      temperature: 0.7
+      max_tokens: 500
+
+probes:
+  # Prompt Injection - test if agent can be manipulated
+  - prompt_injection:
+      enabled: true
+      max_calls: 50
+
+  # DAN jailbreak variants
+  - dan:
+      enabled: true
+
+  # Generic jailbreaks
+  - jailbreak:
+      enabled: true
+
+  # Sensitive data exfiltration
+  - SensitiveDataExfiltration:
+      enabled: true
+
+  # System prompt extraction
+  - prompt_extraction:
+      enabled: true
+
+  # Leaked internal text detection
+  - leaktxt:
+      enabled: true
+
+  # Harmful request refusal
+  - refusal:
+      enabled: true
+
+  # Amplification attacks
+  - amplification:
+      enabled: true
+
+  # MMWM factuality
+  - mmwm:
+      enabled: true
+
+  # LLM04 world facts
+  - LLM04:
+      enabled: true
+
+  # XSS (not web-facing, but included for completeness)
+  - xss:
+      enabled: false
+
+  # SQL injection (no database)
+  - sql_injection:
+      enabled: false
+
+output:
+  format: sarif
+  output_dir: garak-reports
+  filename: garak-results.sarif

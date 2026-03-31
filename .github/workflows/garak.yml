@@ -1,0 +1,76 @@
+name: Garak Red Teaming
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      probes:
+        description: 'Comma-separated probes (leave empty for default)'
+        required: false
+        default: ''
+
+env:
+  GARAK_OPENAI_API_KEY: ${{ secrets.GARAK_OPENAI_API_KEY }}
+  GARAK_OPENAI_BASE_URL: ${{ vars.GARAK_OPENAI_BASE_URL || 'https://api.openai.com/v1' }}
+  GARAK_OPENAI_MODEL: ${{ vars.GARAK_OPENAI_MODEL || 'gpt-4o-mini' }}
+
+jobs:
+  garak-scan:
+    name: Garak Red Team Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install garak and dependencies
+        run: uv sync --extra redteam
+
+      - name: Run Garak scan
+        env:
+          GARAK_OUTPUT_DIR: garak-reports
+        run: |
+          uv run python -m garak \
+            --generator OpenAICompatible \
+            --model_name "${{ env.GARAK_OPENAI_MODEL }}" \
+            --probes prompt_injection,jailbreak,dan,refusal,leaktxt,amplification,SensitiveDataExfiltration,prompt_extraction \
+            --output_dir "$GARAK_OUTPUT_DIR" \
+            --report_format sarif \
+            --verbose
+
+      - name: Upload Garak SARIF results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: garak-sarif
+          path: garak-reports/*.sarif
+          retention-days: 30
+
+      - name: Upload full Garak reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: garak-full-reports
+          path: |
+            garak-reports/*.json
+            garak-reports/*.ndjson
+          retention-days: 30
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: garak-reports/garak-results.sarif
+          category: garak-red-team

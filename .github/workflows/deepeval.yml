@@ -1,0 +1,49 @@
+name: DeepEval Quality Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL || 'https://api.openai.com/v1' }}
+  OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4o-mini' }}
+  DEEPEVAL_MODEL: ${{ vars.DEEPEVAL_MODEL || 'gpt-4o-mini' }}
+  DEEPEVAL_BASE_URL: ${{ vars.DEEPEVAL_BASE_URL || 'https://api.openai.com/v1' }}
+
+jobs:
+  deepeval-tests:
+    name: Run DeepEval Quality Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --extra test
+
+      - name: Run DeepEval tests
+        run: |
+          uv run pytest tests/ \
+            -v \
+            --tb=short \
+            --asyncio-mode=auto \
+            -m deepeval
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepeval-results
+          path: .depeval/
+          retention-days: 30
