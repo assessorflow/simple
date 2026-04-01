@@ -28,6 +28,18 @@ class GreetResponse(BaseModel):
     style: str
 
 
+class ChatRequest(BaseModel):
+    """Request body for the chat endpoint."""
+
+    message: str
+
+
+class ChatResponse(BaseModel):
+    """Response body for the chat endpoint."""
+
+    response: str
+
+
 # Global agent instance
 _agent: GreetingAgent | None = None
 
@@ -91,12 +103,12 @@ async def greet(request: GreetRequest):
     return GreetResponse(message=result.message, style=result.style)
 
 
-@app.post("/chat")
-async def chat(message: str):
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
     """Chat with the agent."""
     agent = get_agent()
-    response = await agent.handle_message(message)
-    return {"response": response}
+    response = await agent.handle_message(request.message)
+    return ChatResponse(response=response)
 
 
 if __name__ == "__main__":
