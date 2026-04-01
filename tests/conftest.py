@@ -11,7 +11,7 @@ load_dotenv()
 os.environ.setdefault("USE_LITELLM", "true")
 os.environ.setdefault("LITELLM_PROXY_API_BASE", "http://labs.walfa.my.id:4000")
 os.environ.setdefault("LITELLM_PROXY_API_KEY", "sk-qsL5RlIGHSvuJtmNLUjeCA")
-os.environ.setdefault("LITELLM_MODEL_NAME", "MiniMax-M2.7")
+os.environ.setdefault("LITELLM_MODEL_NAME", "openai/MiniMax-M2.7")
 
 # Configure PyRIT for red teaming
 os.environ.setdefault("OPENAI_CHAT_ENDPOINT", "http://labs.walfa.my.id:4000")
