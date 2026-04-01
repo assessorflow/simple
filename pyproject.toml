@@ -22,7 +22,7 @@ test = [
     "litellm>=1.0.0",
 ]
 redteam = [
-    "pyrit>=0.12.0",
+    "deepteam>=1.0.0",
     "litellm>=1.0.0",
 ]
 

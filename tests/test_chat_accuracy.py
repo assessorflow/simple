@@ -7,7 +7,7 @@ from deepeval import assert_test
 from deepeval.test_case import LLMTestCase
 from deepeval.metrics import GEval
 
-from src.agent import GreetingAgent
+from agent import GreetingAgent
 
 
 class TestChatAccuracy:

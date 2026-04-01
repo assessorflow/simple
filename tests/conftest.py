@@ -40,5 +40,5 @@ def deepeval_api_key():
 @pytest.fixture(scope="session")
 def agent():
     """Create a GreetingAgent instance for testing."""
-    from src.agent import GreetingAgent
+    from agent import GreetingAgent
     return GreetingAgent()
