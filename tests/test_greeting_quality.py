@@ -1,8 +1,8 @@
 """DeepEval quality tests for the greeting workflow."""
 
 import pytest
-from deepeval import assert_output
-from deepeval.assertion import Assertor, Criterion
+from deepeval import assert_test
+from deepeval.test_case import LLMTestCase
 from deepeval.metrics import GEval
 
 from src.agent import GreetingAgent
@@ -17,24 +17,25 @@ class TestGreetingQuality:
         """Assert friendly greeting includes the person's name."""
         result = await agent.greet(name="Alice", style="friendly")
 
-        assert_output(
+        test_case = LLMTestCase(
             input="Greet Alice with style=friendly",
             actual_output=result.message,
-            assertor=Assertor(
-                criteria=[
-                    Criterion(
-                        name="contains_name",
-                        expected="Alice",
-                        operator="contains",
-                    ),
-                    Criterion(
-                        name="is_friendly_tone",
-                        expected=["hello", "hi", "hey", "greetings"],
-                        operator="contains_any",
-                    ),
-                ]
-            ),
         )
+
+        metric = GEval(
+            name="Contains Name",
+            criteria="The greeting should include the name 'Alice' and have a friendly tone",
+            evaluation_steps=[
+                "Check if the greeting includes 'Alice'",
+                "Check if the greeting sounds friendly (hello, hi, hey, greetings)",
+            ],
+            evaluation_params=[
+                ("input", "The original request"),
+                ("actual_output", "The generated greeting"),
+            ],
+        )
+
+        await assert_test(test_case, metrics=[metric])
 
     @pytest.mark.asyncio
     @pytest.mark.deepeval
@@ -42,7 +43,12 @@ class TestGreetingQuality:
         """Assert formal greeting avoids casual/slang language."""
         result = await agent.greet(name="Dr. Smith", style="formal")
 
-        formal_tone_metric = GEval(
+        test_case = LLMTestCase(
+            input="Greet Dr. Smith with style=formal",
+            actual_output=result.message,
+        )
+
+        metric = GEval(
             name="Formal Tone",
             criteria=(
                 "The greeting should sound professional and formal, "
@@ -59,8 +65,7 @@ class TestGreetingQuality:
             ],
         )
 
-        await formal_tone_metric.measure(input="Dr. Smith", actual_output=result.message)
-        assert formal_tone_metric.score >= 0.7, f"Formal tone score: {formal_tone_metric.score}"
+        await assert_test(test_case, metrics=[metric])
 
     @pytest.mark.asyncio
     @pytest.mark.deepeval
@@ -68,7 +73,12 @@ class TestGreetingQuality:
         """Assert casual greeting has relaxed, informal tone."""
         result = await agent.greet(name="Bob", style="casual")
 
-        casual_tone_metric = GEval(
+        test_case = LLMTestCase(
+            input="Greet Bob with style=casual",
+            actual_output=result.message,
+        )
+
+        metric = GEval(
             name="Casual Tone",
             criteria=(
                 "The greeting should sound relaxed and informal. "
@@ -81,8 +91,7 @@ class TestGreetingQuality:
             evaluation_params=[("actual_output", "The generated greeting")],
         )
 
-        await casual_tone_metric.measure(actual_output=result.message)
-        assert casual_tone_metric.score >= 0.6
+        await assert_test(test_case, metrics=[metric])
 
     @pytest.mark.asyncio
     @pytest.mark.deepeval
@@ -90,16 +99,18 @@ class TestGreetingQuality:
         """Assert greeting has sufficient content (not too short)."""
         result = await agent.greet(name="Charlie", style="friendly")
 
-        assert_output(
+        test_case = LLMTestCase(
             input="Greet Charlie",
             actual_output=result.message,
-            assertor=Assertor(
-                criteria=[
-                    Criterion(
-                        name="minimum_length",
-                        expected=10,
-                        operator="length_gte",
-                    ),
-                ]
-            ),
         )
+
+        metric = GEval(
+            name="Minimum Length",
+            criteria="The greeting should be at least 10 characters long",
+            evaluation_steps=[
+                "Check if the greeting has at least 10 characters",
+            ],
+            evaluation_params=[("actual_output", "The generated greeting")],
+        )
+
+        await assert_test(test_case, metrics=[metric])

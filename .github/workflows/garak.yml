@@ -13,9 +13,9 @@ on:
         default: ''
 
 env:
-  GARAK_OPENAI_API_KEY: ${{ secrets.GARAK_OPENAI_API_KEY }}
-  GARAK_OPENAI_BASE_URL: ${{ vars.GARAK_OPENAI_BASE_URL || 'https://api.openai.com/v1' }}
-  GARAK_OPENAI_MODEL: ${{ vars.GARAK_OPENAI_MODEL || 'gpt-4o-mini' }}
+  LITELLM_PROXY_API_BASE: ${{ vars.LITELLM_PROXY_API_BASE }}
+  LITELLM_PROXY_API_KEY: ${{ secrets.LITELLM_PROXY_API_KEY }}
+  LITELLM_MODEL_NAME: ${{ vars.LITELLM_MODEL_NAME }}
 
 jobs:
   garak-scan:
@@ -40,22 +40,21 @@ jobs:
 
       - name: Run Garak scan
         env:
-          GARAK_OUTPUT_DIR: garak-reports
+          GARAK_PROBES: ${{ github.event.inputs.probes || 'dan,promptinject,latentinjection,leakreplay,exploitation,refusal,goodside,grandma,atkgen' }}
         run: |
-          uv run python -m garak \
-            --generator OpenAICompatible \
-            --model_name "${{ env.GARAK_OPENAI_MODEL }}" \
-            --probes prompt_injection,jailbreak,dan,refusal,leaktxt,amplification,SensitiveDataExfiltration,prompt_extraction \
-            --output_dir "$GARAK_OUTPUT_DIR" \
-            --report_format sarif \
-            --verbose
+          uv run garak \
+            --target_type litellm \
+            --target_name "$LITELLM_MODEL_NAME" \
+            --generator_options "{\"api_base\": \"$LITELLM_PROXY_API_BASE\", \"api_key\": \"$LITELLM_PROXY_API_KEY\", \"provider\": \"openai\"}" \
+            -p "$GARAK_PROBES" \
+            --report garak-results.sarif
 
       - name: Upload Garak SARIF results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: garak-sarif
-          path: garak-reports/*.sarif
+          path: garak-results.sarif
           retention-days: 30
 
       - name: Upload full Garak reports
@@ -64,13 +63,13 @@ jobs:
         with:
           name: garak-full-reports
           path: |
-            garak-reports/*.json
-            garak-reports/*.ndjson
+            garak-*.json
+            garak-*.ndjson
           retention-days: 30
 
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: garak-reports/garak-results.sarif
+          sarif_file: garak-results.sarif
           category: garak-red-team

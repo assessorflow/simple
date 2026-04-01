@@ -8,12 +8,10 @@ on:
   workflow_dispatch:
 
 env:
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL || 'https://api.openai.com/v1' }}
-  OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4o-mini' }}
-  DEEPEVAL_OPENAI_API_KEY: ${{ secrets.DEPEVAL_OPENAI_API_KEY }}
-  DEEPEVAL_MODEL: ${{ vars.DEPEVAL_MODEL || 'gpt-4o-mini' }}
-  DEEPEVAL_BASE_URL: ${{ vars.DEPEVAL_BASE_URL || 'https://api.openai.com/v1' }}
+  USE_LITELLM: "true"
+  LITELLM_PROXY_API_BASE: ${{ vars.LITELLM_PROXY_API_BASE }}
+  LITELLM_PROXY_API_KEY: ${{ secrets.LITELLM_PROXY_API_KEY }}
+  LITELLM_MODEL_NAME: ${{ vars.DEPEVAL_MODEL_NAME }}
 
 jobs:
   deepeval-tests:
